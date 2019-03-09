@@ -13,11 +13,11 @@ class youtubeDlHandler:
         """init youtube-dl class giving:
         @videoFolder: string : folder where the video will be saved
         @musicFolder: string: folder where the music will be saved"""
-        if videoFolder is None:
+        if videoFolder is None or videoFolder == '':
             videoFolder = '~/Video/'
         if videoFolder[-1] != '/':
             videoFolder += '/'
-        if musicFolder is None:
+        if musicFolder is None or musicFolder == '':
             musicFolder = '~/Music/'
         if musicFolder[-1] != '/':
             musicFolder += '/'
