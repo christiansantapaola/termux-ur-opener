@@ -1,0 +1,144 @@
+#!/usr/bin/python3
+
+import subprocess
+import sys
+import os
+import re
+
+
+class youtubeDlHandler:
+    """Class to handle youtube-dl command"""
+
+    def __init__(self, videoFolder, musicFolder):
+        """init youtube-dl class giving:
+        @videoFolder: string : folder where the video will be saved
+        @musicFolder: string: folder where the music will be saved"""
+        if videoFolder is None:
+            videoFolder = '~/Video/'
+        if videoFolder[-1] != '/':
+            videoFolder += '/'
+        if musicFolder is None:
+            musicFolder = '~/Music/'
+        if musicFolder[-1] != '/':
+            musicFolder += '/'
+        self.videoFolder = videoFolder
+        self.musicFolder = musicFolder
+        return
+
+    def isYoutubeUrl(self, url):
+        "Check if url is a youtube url"
+        youtube_pattern = re.compile("https://www.youtube.com/*")
+        return youtube_pattern.match(url)
+
+    def videoDownload(self, url):
+        "Download video from valid youtube url"
+        try:
+            res = subprocess.run([
+                'youtube-dl', '-o', self.videoFolder + '%(title)s.%(ext)s', url
+            ])
+            res.check_returncode()
+        except subprocess.CalledProcessError as err:
+            print('command failed with error code: ' + str(err.returncode))
+
+    def musicDownload(self, url):
+        "Download music from youtube video as mp3"
+        try:
+            res = subprocess.run([
+                'youtube-dl', '--extract-audio', '--audio-format', 'mp3',
+                '--audio-quality', '0', '-o',
+                self.musicFolder + '%(title)s.%(ext)s', url
+            ])
+            res.check_returncode()
+        except subprocess.CalledProcessError as err:
+            print('command failed with error code: ' + str(err.returncode))
+
+
+class OrgLinkHandler:
+    """ interface to save link in a org document"""
+
+    def __init__(self, orgFile):
+        if orgFile is None:
+            orgFile = '~/org/saved.org'
+        self.orgFile = os.path.abspath(os.path.expanduser(orgFile))
+
+    def saveArticle(self, url, title):
+        """Save link article in a text file
+        @url: string: url of the article
+        @title: string: title of the article
+        """
+        orgStr = '* TOREAD ' + title + ' :article:\n:url: ' + url + '\n'
+        # if file does not exits create it
+        try:
+            with open(self.orgFile, 'a+') as f:
+                wt = f.write(orgStr)
+                if wt != len(orgStr):
+                    print('failed writing to file')
+        except IOError:
+            print('error: can\'t open file: ' + self.orgFile)
+
+    def saveFiction(self, url, title):
+        """Save link to fiction in a text file
+        @url: string: url of the article
+        @title: string: title of the article
+        """
+        orgStr = '* TOREAD ' + title + ' :fiction:\n:url: ' + url + '\n'
+        # if file does not exits create it
+        try:
+            with open(self.orgFile, 'a+') as f:
+                wt = f.write(orgStr)
+                if wt != len(orgStr):
+                    print('failed writing to file')
+        except IOError as err:
+            print(err.strerror)
+            print('error: can\'t open file: ' + self.orgFile)
+
+
+class termuxUrlOpenerClass:
+    """ main class, saves context for termuxUrlOpener method"""
+
+    def __init__(self, videoFolder, musicFolder, orgFolder):
+        self.ytHandler = youtubeDlHandler(videoFolder, musicFolder)
+        self.linkHandler = OrgLinkHandler(orgFolder)
+
+    def termuxUrlOpener(self, url):
+        if (url is None):
+            return
+        # check if youtube url and download it
+        if self.ytHandler.isYoutubeUrl(url):
+            try:
+                value = input('a) download audio\nd) download video\n')
+                if value == 'a':
+                    self.ytHandler.musicDownload(url)
+                elif value == 'd':
+                    self.ytHandler.videoDownload(url)
+                else:
+                    print('invalid command')
+                    return
+            except EOFError:
+                return
+        else:
+            # if article of fiction save it
+            value = input('a) article\nf) fiction\n')
+            if value == 'a':
+                try:
+                    title = input('title: ')
+                    self.linkHandler.saveArticle(url, title)
+                except EOFError:
+                    return
+            elif value == 'f':
+                try:
+                    title = input('title: ')
+                    self.linkHandler.saveFiction(url, title)
+                except EOFError:
+                    return
+            else:
+                print('error: invalid choice!')
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print('missing url')
+    else:
+        termuxUrlOpener = termuxUrlOpenerClass('~/Video', '~/Musica',
+                                               '~/org/toread.org')
+        termuxUrlOpener.termuxUrlOpener(sys.argv[1])

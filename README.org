@@ -1,0 +1,4 @@
+* Termux-url-opener
+Simple python script written to be used in Android Termux terminal emulator app.
+- It will download youtube video or audio.
+- Save fiction in an org file
