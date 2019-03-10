@@ -3,7 +3,6 @@
 import subprocess
 import sys
 import os
-import re
 
 
 class youtubeDlHandler:
@@ -27,9 +26,17 @@ class youtubeDlHandler:
 
     def isYoutubeUrl(self, url):
         "Check if url is a youtube url"
-        youtube_pattern = re.compile("https://www.youtube.com/*")
-        return youtube_pattern.match(url)
-
+        try:
+            FNULL = open(os.devnull, 'w')
+            res = subprocess.run(['youtube-dl', '--skip-download', '-j', url], stdout=FNULL)
+            res.check_returncode()
+            return True
+        except subprocess.CalledProcessError:
+            return False
+        except Exception:
+            print('can\' open /dev/null')
+            return False
+        
     def videoDownload(self, url):
         "Download video from valid youtube url"
         try:
